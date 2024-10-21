@@ -17,8 +17,9 @@
         }
         .game-container {
             display: flex;
-            justify-content: space-between;
-            width: 900px; /* Increased the overall width */
+            flex-direction: column;
+            align-items: center;
+            width: 900px;
             background-color: #34495e;
             padding: 20px;
             border-radius: 10px;
@@ -26,30 +27,34 @@
         .game-area {
             text-align: center;
             flex: 2;
+            margin-bottom: 20px;
         }
         .title {
             font-size: 2rem;
             margin-bottom: 20px;
             text-align: center;
-            color: #ffeb3b; /* Optional color for the title */
+            color: #ffeb3b;
         }
         .instructions, .discount-info {
-            flex: 1;
             padding: 10px;
             background-color: #2c3e50;
             border-radius: 5px;
-            margin-left: 20px;
-            width: 300px; /* Increased width of instruction and discount boxes */
+            width: 100%;
+            margin-bottom: 20px;
+            text-align: center;
         }
-        .question {
+        .question, .scoreboard, .timer {
+            display: none; /* Hide initially */
             font-size: 1.5rem;
-            margin: 20px 0;
         }
         .binary-grid {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             gap: 10px;
             margin-bottom: 20px;
+        }
+        ul{
+            list-style: none;
         }
         .bit {
             width: 40px;
@@ -65,7 +70,7 @@
         .bit.active {
             background-color: #2ecc71;
         }
-        .submit-button, .reset-button {
+        .submit-button, .reset-button, .start-button {
             background-color: #2980b9;
             color: white;
             border: none;
@@ -76,15 +81,11 @@
             transition: background-color 0.3s;
             margin: 5px;
         }
-        .submit-button:hover, .reset-button:hover {
+        .submit-button:hover, .reset-button:hover, .start-button:hover {
             background-color: #3498db;
         }
-        .scoreboard, .timer {
-            font-size: 1.2rem;
-            margin: 10px 0;
-        }
         .binary-guide {
-            display: grid;
+            display: none; /* Hide initially */
             grid-template-columns: repeat(8, 1fr);
             gap: 10px;
             margin-bottom: 10px;
@@ -102,10 +103,22 @@
             font-size: 1rem;
             display: none;
         }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
+        <div class="instructions">
+            <h2>Instructions</h2>
+            <p>Your goal is to convert a decimal number to its binary equivalent.</p>
+            <p>Click on the boxes below to toggle between 0 and 1.</p>
+            <p>When you think you've got the correct answer, click "Submit".</p>
+            <p>The higher score you reach, the higher reward you receive.</p>
+        </div>
         <div class="game-area">
             <div class="title">PASTIL DE UC BINARY!</div>
             <div class="scoreboard" id="scoreboard">Score: 0</div>
@@ -122,27 +135,21 @@
                 <div>1</div>
             </div>
             <div class="binary-grid" id="binaryGrid"></div>
-            <button class="submit-button" id="submitBtn">Submit</button>
-            <button class="reset-button" id="resetBtn">Reset</button>
+            <div class="button-container">
+                <button class="submit-button" id="submitBtn" disabled>Submit</button>
+                <button class="reset-button" id="resetBtn">Reset</button>
+            </div>
             <div class="result" id="resultDisplay"></div>
             <div class="feedback" id="feedbackDisplay"></div>
         </div>
-        <div class="instructions">
-            <h2>Instructions</h2>
-            <p>Your goal is to convert a decimal number to its binary equivalent.</p>
-            <p>Click on the boxes below to toggle between 0 and 1.</p>
-            <p>When you think you've got the correct answer, click "Submit".</p>
-            <p>The higher score you reach, the higher reward you receive.</p>
-        </div>
+        <button class="start-button" id="startBtn">Start Game</button>
         <div class="discount-info">
             <h3>Discount Rewards</h3>
-            <p>You may receive a discount of up to 10%. Upon reaching this score.</p>
+            <p>You may receive a discount of up to 10% upon reaching this score.</p>
             <h3>Scores Discount</h3>
             <ul>
               <li>300 = 1% Discount</li>
-              <br>
               <li>1000 = 5% Discount</li>
-              <br>
               <li>2000 = 10% Discount</li>
             </ul>
         </div>
@@ -153,10 +160,12 @@
         const timerDisplay = document.getElementById('timer');
         const questionDisplay = document.getElementById('question');
         const binaryGrid = document.getElementById('binaryGrid');
+        const binaryGuide = document.getElementById('binaryGuide');
         const submitBtn = document.getElementById('submitBtn');
         const resetBtn = document.getElementById('resetBtn');
         const resultDisplay = document.getElementById('resultDisplay');
         const feedbackDisplay = document.getElementById('feedbackDisplay');
+        const startBtn = document.getElementById('startBtn');
 
         let currentDecimal;
         let score = 0;
@@ -169,8 +178,14 @@
             scoreboard.textContent = `Score: ${score}`;
             resultDisplay.style.display = 'none'; // Hide results
             feedbackDisplay.style.display = 'none'; // Hide feedback
+            submitBtn.disabled = false; // Enable submit button
+            binaryGuide.style.display = 'grid'; // Show binary guide
+            scoreboard.style.display = 'block'; // Show scoreboard
+            timerDisplay.style.display = 'block'; // Show timer
+            questionDisplay.style.display = 'block'; // Show question
             nextQuestion();
             startTimer();
+            startBtn.style.display = 'none'; // Hide start button
         }
 
         function startTimer() {
@@ -201,7 +216,6 @@
         }
 
         function toggleBit(bitEl) {
-            const index = bitEl.dataset.index;
             bitEl.classList.toggle('active');
             bitEl.textContent = bitEl.classList.contains('active') ? '1' : '0';
         }
@@ -229,9 +243,14 @@
         }
 
         function endGame() {
+            clearInterval(timerInterval);
             resultDisplay.style.display = 'block';
             resultDisplay.textContent = `Game Over! Your final score: ${score}.`;
             feedbackDisplay.style.display = 'none'; // Hide feedback at game end
+            binaryGuide.style.display = 'none'; // Hide binary guide
+            scoreboard.style.display = 'none'; // Hide scoreboard
+            timerDisplay.style.display = 'none'; // Hide timer
+            questionDisplay.style.display = 'none'; // Hide question
         }
 
         function resetGame() {
@@ -244,14 +263,19 @@
             timerDisplay.textContent = `Time: ${timeLeft}`; // Reset timer display
             resultDisplay.style.display = 'none'; // Hide results
             feedbackDisplay.style.display = 'none'; // Hide feedback
-            startGame(); // Start a new game
+            submitBtn.disabled = true; // Disable submit button
+            startBtn.style.display = 'block'; // Show start button for a new game
+            binaryGuide.style.display = 'none'; // Ensure binary guide is hidden
+            scoreboard.style.display = 'none'; // Hide scoreboard
+            timerDisplay.style.display = 'none'; // Hide timer
+            questionDisplay.style.display = 'none'; // Hide question
         }
 
         submitBtn.addEventListener('click', submitAnswer);
         resetBtn.addEventListener('click', resetGame);
+        startBtn.addEventListener('click', startGame); // Start game when start button is clicked
 
-        // Start the game when the page loads
-        startGame();
+        // Remove auto-start; game will now start when the start button is clicked
     </script>
 </body>
 </html>
